@@ -53,7 +53,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Остальные маршруты...
+
 
 app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`);
