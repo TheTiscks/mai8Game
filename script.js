@@ -3,6 +3,7 @@ $(document).ready(function() {
     let words = [];
     let currentCrossword = null;
     let currentLevel = 1;
+    let coins = parseInt(localStorage.getItem('userCoins')) || 0;
 
     // Проверка авторизации
     const userEmail = localStorage.getItem('crosswordUserEmail');
@@ -37,12 +38,42 @@ $(document).ready(function() {
 
     // Функция показа сканворда
     function showCrossword(email) {
+        checkDailyBonus();
         $('#auth-container').hide();
         $('#crossword-container').show();
         $('#user-email').text(email);
         $('#user-avatar').text(email.charAt(0).toUpperCase());
-
+        updateCoinsDisplay();
         generateCrossword();
+    }
+
+    // Обновление отображения монет
+    function updateCoinsDisplay() {
+        $('#user-coins').text(coins);
+        localStorage.setItem('userCoins', coins.toString());
+    }
+
+    // Награда за уровень
+    function awardLevelComplete() {
+    // Дополнительная награда за сложность
+    if (currentLevel === 2) {
+        coins += 5; // Бонус 5 монет за сложный уровень
+        $('#user-coins').text(coins);
+    }
+    localStorage.setItem('userCoins', coins.toString());
+}
+
+    // Ежедневный бонус
+    function checkDailyBonus() {
+        const lastLogin = localStorage.getItem('lastLogin');
+        const today = new Date().toDateString();
+        
+        if (lastLogin !== today) {
+            coins += 50;
+            alert('Ежедневный бонус: +50 монет!');
+            localStorage.setItem('lastLogin', today);
+            updateCoinsDisplay();
+        }
     }
 
     // Генерация сканворда
@@ -59,7 +90,7 @@ $(document).ready(function() {
         const rows = 20;
         const cols = 20;
 
-        // Список слов для сканворда в зависимости от уровня
+        // Список слов для сканворда
         if (currentLevel === 1) {
             words = [
                 // По горизонтали
@@ -103,9 +134,10 @@ $(document).ready(function() {
             ];
         }
 
+
         currentCrossword.words = words;
 
-        // Создаем сетку
+        // Создание сетки
         for (let row = 0; row < rows; row++) {
             currentCrossword.grid[row] = [];
             for (let col = 0; col < cols; col++) {
@@ -119,7 +151,7 @@ $(document).ready(function() {
             }
         }
 
-        // Размещаем слова
+        // Размещение слов
         let wordNumber = 1;
         const acrossClues = $('#across-clues');
         const downClues = $('#down-clues');
@@ -130,15 +162,18 @@ $(document).ready(function() {
             const { word, clue, row, col, direction } = wordObj;
             const wordLength = word.length;
 
-            // Проверяем, помещается ли слово в сетку
-            if (direction === "across" && (col + wordLength - 1 > cols)) {
-                console.error(`Слово "${word}" не помещается по горизонтали в позиции (${row}, ${col})`);
+            // Проверка размещения
+            if (
+                (direction === "across" && col + wordLength - 1 > cols) ||
+                (direction === "down" && row + wordLength - 1 > rows)
+            ) {
+                console.error(`Слово "${word}" не помещается`);
                 return;
             }
-            if (direction === "down" && (row + wordLength - 1 > rows)) {
-                console.error(`Слово "${word}" не помещается по вертикали в позиции (${row}, ${col})`);
-                return;
-            }
+
+            // ========== ДО ЭТОГО МЕСТА ========== //
+            // Добавляем подсказку
+            // ... следующий код ...
 
             // Добавляем подсказку
             const clueElement = $('<div>')
@@ -392,33 +427,41 @@ $(document).ready(function() {
         return isCorrect;
     }
 
-    // Проверка, все ли слова решены
+
+// В функции checkAllWordsSolved
     function checkAllWordsSolved() {
         let allSolved = true;
-
+        
         words.forEach(wordObj => {
-            const wordNum = words.indexOf(wordObj) + 1;
-            const wordId = `${wordObj.direction}-${wordNum}`;
+            const wordId = `${wordObj.direction}-${words.indexOf(wordObj) + 1}`;
             const wordCells = $(`input[data-word="${wordId}"]`);
-
+            
             let wordCorrect = true;
             wordCells.each(function() {
                 if (!$(this).hasClass('correct')) {
                     wordCorrect = false;
-                    return false; // break the loop
+                    return false;
                 }
             });
-
-            if (!wordCorrect) {
-                allSolved = false;
-            }
+            
+            if (!wordCorrect) allSolved = false;
         });
 
         if (allSolved) {
+            // Начисление валюты
+            const levelReward = currentLevel * 15; // 15 монет за уровень 1, 30 за уровень 2
+            coins += levelReward;
+            
+            // Сохранение и обновление
+            localStorage.setItem('userCoins', coins.toString());
+            $('#user-coins').text(coins);
+            
             setTimeout(() => {
-                alert('Поздравляем! Вы успешно решили сканворд!');
+                alert(`🎉 Уровень пройден!\nПолучено: ${levelReward} монет`);
+                awardLevelComplete();
             }, 300);
         }
+        return allSolved;
     }
 
     // Кнопка показа ответа
