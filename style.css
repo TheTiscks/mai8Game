@@ -274,13 +274,6 @@ h1 {
     background: #7B1FA2;
 }
 
-.timer {
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--secondary-color);
-    margin-left: auto;
-}
-
 .correct {
     color: var(--correct-color);
 }
@@ -298,6 +291,45 @@ h1 {
     background-color: rgba(244, 67, 54, 0.1);
 }
 
+/* Стили выбора уровня */
+.level-selector {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.level-btn {
+    padding: 10px 20px;
+    background: #e0e0e0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+.coin-balance {
+    font-size: 14px;
+    color: #FFD700;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.coin-balance span {
+    color: #333;
+}
+
+.level-btn:hover {
+    background: #d0d0d0;
+}
+
+.level-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
 @media (max-width: 768px) {
     :root {
         --cell-size: 30px;
@@ -310,5 +342,10 @@ h1 {
     #crossword {
         grid-template-columns: repeat(15, var(--cell-size));
         grid-template-rows: repeat(15, var(--cell-size));
+    }
+
+    .level-selector {
+        flex-direction: column;
+        align-items: center;
     }
 }
