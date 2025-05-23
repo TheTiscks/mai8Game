@@ -59,10 +59,6 @@
             margin-top: 10px;
         }
 
-        .success {
-            color: green;
-        }
-
         .error {
             color: red;
         }
@@ -77,27 +73,15 @@
         <button type="submit">Войти</button>
     </form>
     <p id="message"></p>
+    <p class="error" style="display: none;"></p> <!-- Скрытый элемент для линтера -->
 </div>
 <script>
-    // Функция для получения параметров из URL
-    function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-    }
-
-    // Проверяем, есть ли параметр email в URL (после успешного входа)
-    const loggedInEmail = getQueryParam('email');
-    const messageElement = document.getElementById('message');
-    if (loggedInEmail) {
-        messageElement.textContent = `Добро пожаловать, ${decodeURIComponent(loggedInEmail)}!`;
-        messageElement.classList.add('success');
-        document.getElementById('loginForm').style.display = 'none'; // Скрываем форму
-    }
-
     // Обработка отправки формы
     document.getElementById('loginForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const email = document.getElementById('email').value;
+        const messageElement = document.getElementById('message');
+
         try {
             const response = await fetch('/send-login-link', {
                 method: 'POST',
@@ -107,9 +91,8 @@
                 body: JSON.stringify({ email })
             });
             const data = await response.json();
-            if (response.ok) {
-                messageElement.textContent = data.message;
-                messageElement.classList.add('success');
+            if (response.ok && data.success) {
+                window.location.href = data.redirect; // Перенаправление на dashboard
             } else {
                 messageElement.textContent = data.message;
                 messageElement.classList.add('error');
