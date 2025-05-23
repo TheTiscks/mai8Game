@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Премиум Сканворд</title>
+    <title>Сканворд "Путешествия"</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
     <style>
         :root {
@@ -282,13 +282,6 @@
             background: #7B1FA2;
         }
 
-        .timer {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-left: auto;
-        }
-
         .correct {
             color: var(--correct-color);
         }
@@ -306,6 +299,33 @@
             background-color: rgba(244, 67, 54, 0.1);
         }
 
+        /* Стили выбора уровня */
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .level-btn {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .level-btn:hover {
+            background: #d0d0d0;
+        }
+
+        .level-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
         @media (max-width: 768px) {
             :root {
                 --cell-size: 30px;
@@ -319,6 +339,11 @@
                 grid-template-columns: repeat(15, var(--cell-size));
                 grid-template-rows: repeat(15, var(--cell-size));
             }
+
+            .level-selector {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -327,7 +352,7 @@
         <div id="auth-container">
             <div class="auth-form">
                 <h1>Добро пожаловать!</h1>
-                <p>Введите ваш email для доступа к премиум сканворду</p>
+                <p>Введите ваш email для доступа к сканворду "Путешествия"</p>
                 <form id="auth-form">
                     <input type="email" id="email" placeholder="Ваш email" required>
                     <button type="submit">Начать решение</button>
@@ -341,8 +366,12 @@
                     <div class="user-avatar" id="user-avatar">U</div>
                     <span id="user-email"></span>
                 </div>
-                <div class="timer" id="timer">00:00:00</div>
                 <button id="logout-btn">Выйти</button>
+            </div>
+
+            <div class="level-selector">
+                <button class="level-btn active" data-level="1">Уровень 1 (Легкий)</button>
+                <button class="level-btn" data-level="2">Уровень 2 (Средний)</button>
             </div>
 
             <div class="crossword-wrapper">
@@ -372,9 +401,8 @@
         $(document).ready(function() {
             // Глобальные переменные
             let words = [];
-            let timerInterval;
-            let seconds = 0;
             let currentCrossword = null;
+            let currentLevel = 1;
 
             // Проверка авторизации
             const userEmail = localStorage.getItem('crosswordUserEmail');
@@ -399,6 +427,14 @@
                 location.reload();
             });
 
+            // Выбор уровня сложности
+            $('.level-btn').click(function() {
+                $('.level-btn').removeClass('active');
+                $(this).addClass('active');
+                currentLevel = $(this).data('level');
+                generateCrossword();
+            });
+
             // Функция показа сканворда
             function showCrossword(email) {
                 $('#auth-container').hide();
@@ -406,26 +442,7 @@
                 $('#user-email').text(email);
                 $('#user-avatar').text(email.charAt(0).toUpperCase());
 
-                startTimer();
                 generateCrossword();
-            }
-
-            // Таймер
-            function startTimer() {
-                clearInterval(timerInterval);
-                seconds = 0;
-                updateTimerDisplay();
-                timerInterval = setInterval(function() {
-                    seconds++;
-                    updateTimerDisplay();
-                }, 1000);
-            }
-
-            function updateTimerDisplay() {
-                const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
-                const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-                const secs = (seconds % 60).toString().padStart(2, '0');
-                $('#timer').text(`${hours}:${minutes}:${secs}`);
             }
 
             // Генерация сканворда
@@ -442,26 +459,49 @@
                 const rows = 20;
                 const cols = 20;
 
-                // Список слов для сканворда
-                words = [
-                    // По горизонтали
-                    { word: "ПРОГРАММИРОВАНИЕ", clue: "Процесс создания компьютерных программ", row: 1, col: 3, direction: "across" },
-                    { word: "АЛГОРИТМ", clue: "Последовательность действий для решения задачи", row: 3, col: 5, direction: "across" },
-                    { word: "КОМПИЛЯТОР", clue: "Программа, переводящая код в машинный язык", row: 5, col: 2, direction: "across" },
-                    { word: "ФУНКЦИЯ", clue: "Подпрограмма, выполняющая определенную задачу", row: 7, col: 8, direction: "across" },
-                    { word: "БАЗАДАННЫХ", clue: "Структурированный набор данных", row: 9, col: 6, direction: "across" },
-                    { word: "ИНТЕРФЕЙС", clue: "Средство взаимодействия между системами", row: 11, col: 4, direction: "across" },
-                    { word: "СЕРВЕР", clue: "Компьютер, предоставляющий услуги другим компьютерам", row: 13, col: 7, direction: "across" },
+                // Список слов для сканворда в зависимости от уровня
+                if (currentLevel === 1) {
+                    words = [
+                        // По горизонтали
+                        { word: "ОТЕЛЬ", clue: "Место, где останавливаются туристы", row: 1, col: 3, direction: "across" },
+                        { word: "ПЛЯЖ", clue: "Песчаное место у моря", row: 3, col: 5, direction: "across" },
+                        { word: "САМОЛЕТ", clue: "Воздушный транспорт", row: 5, col: 2, direction: "across" },
+                        { word: "ЧЕМОДАН", clue: "В него складывают вещи для поездки", row: 7, col: 8, direction: "across" },
+                        { word: "КАРТА", clue: "Помогает не заблудиться", row: 9, col: 6, direction: "across" },
+                        { word: "ЭКСКУРСИЯ", clue: "Организованный осмотр достопримечательностей", row: 11, col: 4, direction: "across" },
+                        { word: "ПАСПОРТ", clue: "Документ для выезда за границу", row: 13, col: 7, direction: "across" },
 
-                    // По вертикали
-                    { word: "ПИТОН", clue: "Популярный язык программирования", row: 2, col: 4, direction: "down" },
-                    { word: "ЖАВАСКРИПТ", clue: "Язык для веб-разработки", row: 1, col: 10, direction: "down" },
-                    { word: "СИНТАКСИС", clue: "Правила написания кода", row: 2, col: 15, direction: "down" },
-                    { word: "ОБЪЕКТ", clue: "Экземпляр класса в ООП", row: 4, col: 12, direction: "down" },
-                    { word: "ЦИКЛ", clue: "Конструкция для повторения действий", row: 6, col: 9, direction: "down" },
-                    { word: "МАССИВ", clue: "Структура данных для хранения элементов", row: 8, col: 6, direction: "down" },
-                    { word: "КОД", clue: "Набор инструкций для компьютера", row: 10, col: 3, direction: "down" }
-                ];
+                        // По вертикали
+                        { word: "ГОРА", clue: "Высокая природная возвышенность", row: 2, col: 4, direction: "down" },
+                        { word: "МОРЕ", clue: "Большой водоем с соленой водой", row: 1, col: 10, direction: "down" },
+                        { word: "ВАЛЮТА", clue: "Деньги другой страны", row: 2, col: 15, direction: "down" },
+                        { word: "ОСТРОВ", clue: "Участок суши, окруженный водой", row: 4, col: 12, direction: "down" },
+                        { word: "ПОЕЗД", clue: "Железнодорожный транспорт", row: 6, col: 9, direction: "down" },
+                        { word: "СУВЕНИР", clue: "Памятная вещь из поездки", row: 8, col: 6, direction: "down" },
+                        { word: "ВИЗА", clue: "Разрешение на въезд в страну", row: 10, col: 3, direction: "down" }
+                    ];
+                } else {
+                    // Средний уровень сложности
+                    words = [
+                        // По горизонтали
+                        { word: "АЭРОПОРТ", clue: "Место, откуда отправляются самолеты", row: 1, col: 1, direction: "across" },
+                        { word: "КУРОРТ", clue: "Место для отдыха и лечения", row: 3, col: 4, direction: "across" },
+                        { word: "БАГАЖ", clue: "Вещи, которые берут в поездку", row: 5, col: 2, direction: "across" },
+                        { word: "ГИД", clue: "Проводник, который показывает достопримечательности", row: 7, col: 8, direction: "across" },
+                        { word: "ПУТЕШЕСТВИЕ", clue: "Поездка в другую местность или страну", row: 9, col: 5, direction: "across" },
+                        { word: "ТУРИСТ", clue: "Человек, который посещает новые места", row: 11, col: 3, direction: "across" },
+                        { word: "ПАЛАТКА", clue: "Временное жилище для кемпинга", row: 13, col: 7, direction: "across" },
+
+                        // По вертикали
+                        { word: "ВОКЗАЛ", clue: "Место отправления поездов", row: 2, col: 6, direction: "down" },
+                        { word: "ПАСПОРТ", clue: "Главный документ путешественника", row: 1, col: 12, direction: "down" },
+                        { word: "ОКЕАН", clue: "Самый большой водоем на Земле", row: 2, col: 18, direction: "down" },
+                        { word: "РОЮКЗАК", clue: "Сумка для переноски вещей за спиной", row: 4, col: 15, direction: "down" },
+                        { word: "БИЛЕТ", clue: "Документ на проезд", row: 6, col: 10, direction: "down" },
+                        { word: "ГОРОД", clue: "Крупный населенный пункт", row: 8, col: 7, direction: "down" },
+                        { word: "ПЛЯЖ", clue: "Место для купания и загара", row: 10, col: 4, direction: "down" }
+                    ];
+                }
 
                 currentCrossword.words = words;
 
@@ -490,6 +530,16 @@
                     const { word, clue, row, col, direction } = wordObj;
                     const wordLength = word.length;
 
+                    // Проверяем, помещается ли слово в сетку
+                    if (direction === "across" && (col + wordLength - 1 > cols)) {
+                        console.error(`Слово "${word}" не помещается по горизонтали в позиции (${row}, ${col})`);
+                        return;
+                    }
+                    if (direction === "down" && (row + wordLength - 1 > rows)) {
+                        console.error(`Слово "${word}" не помещается по вертикали в позиции (${row}, ${col})`);
+                        return;
+                    }
+
                     // Добавляем подсказку
                     const clueElement = $('<div>')
                         .addClass('clue')
@@ -509,6 +559,12 @@
                     for (let i = 0; i < wordLength; i++) {
                         const currentRow = direction === "down" ? row + i - 1 : row - 1;
                         const currentCol = direction === "across" ? col + i - 1 : col - 1;
+
+                        // Проверка границ
+                        if (currentRow < 0 || currentRow >= rows || currentCol < 0 || currentCol >= cols) {
+                            console.error(`Ячейка (${currentRow}, ${currentCol}) выходит за границы сетки`);
+                            continue;
+                        }
 
                         const cellData = currentCrossword.grid[currentRow][currentCol];
                         cellData.isBlack = false;
@@ -663,7 +719,9 @@
                     const currentRow = direction === "down" ? row + i - 1 : row - 1;
                     const currentCol = direction === "across" ? col + i - 1 : col - 1;
 
-                    currentCrossword.grid[currentRow][currentCol].element.addClass('active-cell');
+                    if (currentRow >= 0 && currentRow < 20 && currentCol >= 0 && currentCol < 20) {
+                        currentCrossword.grid[currentRow][currentCol].element.addClass('active-cell');
+                    }
                 }
 
                 // Подсвечиваем подсказку
@@ -702,6 +760,8 @@
                 for (let i = 0; i < wordLength; i++) {
                     const currentRow = direction === "down" ? row + i - 1 : row - 1;
                     const currentCol = direction === "across" ? col + i - 1 : col - 1;
+
+                    if (currentRow < 0 || currentRow >= 20 || currentCol < 0 || currentCol >= 20) continue;
 
                     const cellData = currentCrossword.grid[currentRow][currentCol];
                     const input = cellData.element.children('input');
@@ -757,7 +817,6 @@
                 if (allSolved) {
                     setTimeout(() => {
                         alert('Поздравляем! Вы успешно решили сканворд!');
-                        clearInterval(timerInterval);
                     }, 300);
                 }
             }
@@ -790,6 +849,8 @@
                     const currentRow = direction === "down" ? row + i - 1 : row - 1;
                     const currentCol = direction === "across" ? col + i - 1 : col - 1;
 
+                    if (currentRow < 0 || currentRow >= 20 || currentCol < 0 || currentCol >= 20) continue;
+
                     const cellData = currentCrossword.grid[currentRow][currentCol];
                     const input = cellData.element.children('input');
 
@@ -809,7 +870,6 @@
             $('#new-game-btn').click(function() {
                 if (confirm('Начать новую игру? Текущий прогресс будет потерян.')) {
                     generateCrossword();
-                    startTimer();
                 }
             });
         });
