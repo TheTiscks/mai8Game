@@ -568,6 +568,22 @@
                     checkWordOnComplete($(this));
                 });
 
+                // Обработка Backspace для перехода к предыдущей ячейке
+                $('.cell input').on('keydown', function(e) {
+                    if (e.key === 'Backspace' && $(this).val() === '') {
+                        const direction = $(this).data('word').split('-')[0];
+                        const row = parseInt($(this).data('row'));
+                        const col = parseInt($(this).data('col'));
+
+                        const prevCell = getPrevCell(row, col, direction);
+                        if (prevCell) {
+                            prevCell.focus();
+                            prevCell.val(''); // Очищаем предыдущую ячейку
+                            e.preventDefault(); // Предотвращаем удаление символа в текущей ячейке
+                        }
+                    }
+                });
+
                 // Подсветка слова при клике на ячейку
                 $('.cell input').on('click', function() {
                     const wordId = $(this).data('word');
@@ -580,6 +596,26 @@
                         }
                     }
                 });
+            }
+
+            // Функция получения предыдущей ячейки
+            function getPrevCell(row, col, direction) {
+                let prevRow = row;
+                let prevCol = col;
+
+                if (direction === "across") {
+                    prevCol -= 1;
+                } else {
+                    prevRow -= 1;
+                }
+
+                if (prevRow >= 0 && prevRow < 20 && prevCol >= 0 && prevCol < 20) {
+                    const prevCellData = currentCrossword.grid[prevRow][prevCol];
+                    if (!prevCellData.isBlack && prevCellData.element.children('input').length) {
+                        return prevCellData.element.children('input');
+                    }
+                }
+                return null;
             }
 
             // Проверка слова при полном вводе
