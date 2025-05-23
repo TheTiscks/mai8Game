@@ -295,6 +295,15 @@
 
         .incorrect {
             color: var(--incorrect-color);
+            background-color: rgba(244, 67, 54, 0.1);
+        }
+
+        .word-correct {
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+
+        .word-incorrect {
+            background-color: rgba(244, 67, 54, 0.1);
         }
 
         @media (max-width: 768px) {
@@ -352,7 +361,6 @@
             </div>
 
             <div class="controls">
-                <button class="control-btn" id="check-btn">Проверить</button>
                 <button class="control-btn" id="reveal-btn">Показать ответ</button>
                 <button class="control-btn" id="new-game-btn">Новая игра</button>
             </div>
@@ -517,7 +525,8 @@
                                 .attr('maxlength', '1')
                                 .attr('data-row', currentRow)
                                 .attr('data-col', currentCol)
-                                .attr('data-word', `${direction}-${wordNumber}`);
+                                .attr('data-word', `${direction}-${wordNumber}`)
+                                .attr('data-position', i);
                             cellData.element.append(input);
                         }
 
@@ -554,6 +563,9 @@
                     if (nextCell) {
                         nextCell.focus();
                     }
+
+                    // Проверка слова при полном вводе
+                    checkWordOnComplete($(this));
                 });
 
                 // Подсветка слова при клике на ячейку
@@ -570,11 +582,41 @@
                 });
             }
 
+            // Проверка слова при полном вводе
+            function checkWordOnComplete(inputElement) {
+                const wordId = inputElement.data('word');
+                const wordObj = words.find(w =>
+                    `${w.direction}-${words.indexOf(w) + 1}` === wordId
+                );
+
+                if (wordObj) {
+                    // Проверяем, заполнены ли все буквы слова
+                    const wordCells = $(`input[data-word="${wordId}"]`);
+                    let allFilled = true;
+
+                    wordCells.each(function() {
+                        if (!$(this).val()) {
+                            allFilled = false;
+                            return false; // break the loop
+                        }
+                    });
+
+                    if (allFilled) {
+                        checkWord(wordObj);
+                    } else {
+                        // Снимаем подсветку, если слово не полностью заполнено
+                        wordCells.removeClass('correct incorrect');
+                        $(`.clue[data-word="${wordId}"]`).removeClass('word-correct word-incorrect');
+                    }
+                }
+            }
+
             // Функция подсветки слова
             function highlightWord(wordObj) {
                 const { word, row, col, direction } = wordObj;
                 const wordLength = word.length;
                 const wordNum = words.indexOf(wordObj) + 1;
+                const wordId = `${direction}-${wordNum}`;
 
                 // Снимаем подсветку
                 $('.cell').removeClass('active-cell');
@@ -589,7 +631,7 @@
                 }
 
                 // Подсвечиваем подсказку
-                $(`.clue[data-word="${direction}-${wordNum}"]`).addClass('active-clue');
+                $(`.clue[data-word="${wordId}"]`).addClass('active-clue');
             }
 
             // Функция получения следующей ячейки
@@ -612,46 +654,15 @@
                 return null;
             }
 
-            // Кнопка проверки
-            $('#check-btn').click(function() {
-                let allCorrect = true;
-                let checkedWords = new Set();
-
-                // Проверяем все заполненные ячейки
-                $('.cell input').each(function() {
-                    const wordId = $(this).data('word');
-                    const row = parseInt($(this).data('row'));
-                    const col = parseInt($(this).data('col'));
-
-                    if (wordId && $(this).val()) {
-                        const wordObj = words.find(w =>
-                            `${w.direction}-${words.indexOf(w) + 1}` === wordId
-                        );
-
-                        if (wordObj && !checkedWords.has(wordObj.word)) {
-                            const wordCorrect = checkWord(wordObj);
-                            if (!wordCorrect) {
-                                allCorrect = false;
-                            }
-                            checkedWords.add(wordObj.word);
-                        }
-                    }
-                });
-
-                if (allCorrect) {
-                    setTimeout(() => {
-                        alert('Поздравляем! Вы успешно решили сканворд!');
-                        clearInterval(timerInterval);
-                    }, 300);
-                }
-            });
-
             // Проверка одного слова
             function checkWord(wordObj) {
                 const { word, row, col, direction } = wordObj;
                 const wordLength = word.length;
+                const wordNum = words.indexOf(wordObj) + 1;
+                const wordId = `${direction}-${wordNum}`;
                 let isCorrect = true;
 
+                // Проверяем каждую букву
                 for (let i = 0; i < wordLength; i++) {
                     const currentRow = direction === "down" ? row + i - 1 : row - 1;
                     const currentCol = direction === "across" ? col + i - 1 : col - 1;
@@ -661,18 +672,58 @@
                     const userChar = input.val().toUpperCase();
                     const correctChar = word[i];
 
-                    if (userChar === correctChar) {
-                        input.addClass('correct').removeClass('incorrect');
-                    } else if (userChar) {
-                        input.addClass('incorrect').removeClass('correct');
+                    if (userChar !== correctChar) {
                         isCorrect = false;
-                    } else {
-                        input.removeClass('correct').removeClass('incorrect');
-                        isCorrect = false;
+                        break;
                     }
                 }
 
+                // Подсвечиваем слово в зависимости от результата проверки
+                const wordCells = $(`input[data-word="${wordId}"]`);
+                const clueElement = $(`.clue[data-word="${wordId}"]`);
+
+                if (isCorrect) {
+                    wordCells.addClass('correct').removeClass('incorrect');
+                    clueElement.addClass('word-correct').removeClass('word-incorrect');
+
+                    // Проверяем, все ли слова решены
+                    checkAllWordsSolved();
+                } else {
+                    wordCells.addClass('incorrect').removeClass('correct');
+                    clueElement.addClass('word-incorrect').removeClass('word-correct');
+                }
+
                 return isCorrect;
+            }
+
+            // Проверка, все ли слова решены
+            function checkAllWordsSolved() {
+                let allSolved = true;
+
+                words.forEach(wordObj => {
+                    const wordNum = words.indexOf(wordObj) + 1;
+                    const wordId = `${wordObj.direction}-${wordNum}`;
+                    const wordCells = $(`input[data-word="${wordId}"]`);
+
+                    let wordCorrect = true;
+                    wordCells.each(function() {
+                        if (!$(this).hasClass('correct')) {
+                            wordCorrect = false;
+                            return false; // break the loop
+                        }
+                    });
+
+                    if (!wordCorrect) {
+                        allSolved = false;
+                    }
+                });
+
+                if (allSolved) {
+                    setTimeout(() => {
+                        alert('Поздравляем! Вы успешно решили сканворд!');
+                        clearInterval(timerInterval);
+                    }, 300);
+                }
             }
 
             // Кнопка показа ответа
@@ -696,6 +747,8 @@
             function revealWord(wordObj) {
                 const { word, row, col, direction } = wordObj;
                 const wordLength = word.length;
+                const wordNum = words.indexOf(wordObj) + 1;
+                const wordId = `${direction}-${wordNum}`;
 
                 for (let i = 0; i < wordLength; i++) {
                     const currentRow = direction === "down" ? row + i - 1 : row - 1;
@@ -708,6 +761,12 @@
                         .addClass('correct')
                         .removeClass('incorrect');
                 }
+
+                // Подсвечиваем подсказку как правильную
+                $(`.clue[data-word="${wordId}"]`).addClass('word-correct').removeClass('word-incorrect');
+
+                // Проверяем, все ли слова решены
+                checkAllWordsSolved();
             }
 
             // Новая игра
