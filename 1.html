@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сканворд "Путешествия"</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <div id="auth-container">
+        <div class="auth-form">
+            <h1>Добро пожаловать!</h1>
+            <p>Введите ваш email для доступа к сканворду "Путешествия"</p>
+            <form id="auth-form">
+                <input type="email" id="email" placeholder="Ваш email" required>
+                <button type="submit">Начать решение</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="crossword-container">
+        <div class="crossword-header">
+            <div class="user-info">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div>
+                    <span id="user-email"></span>
+                    <div class="coin-balance">
+                        🪙 <span id="user-coins">0</span>
+                    </div>
+                </div>
+            </div>
+            <button id="logout-btn">Выйти</button>
+        </div>
+
+        <div class="level-selector">
+            <button class="level-btn active" data-level="1">Уровень 1 (Легкий)</button>
+            <button class="level-btn" data-level="2">Уровень 2 (Средний)</button>
+        </div>
+
+        <div class="crossword-wrapper">
+            <div id="crossword"></div>
+
+            <div class="clues-panel">
+                <div class="clues-section">
+                    <h3>По горизонтали:</h3>
+                    <div id="across-clues"></div>
+                </div>
+                <div class="clues-section">
+                    <h3>По вертикали:</h3>
+                    <div id="down-clues"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="reveal-btn">Показать ответ</button>
+            <button class="control-btn" id="new-game-btn">Новая игра</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
